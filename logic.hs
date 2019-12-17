@@ -1,0 +1,9 @@
+type PVar = String
+data Term = NULL | Bar String | Hat String
+data Pred = EQ Term Term | NE Term Term
+type PathExp = [Pred]
+type SymbStore = [(PVar, Term)]
+type PureFml = (SymbStore, PathExp)
+data SpatPred = Mapsto Term Term | Ls Term Term
+type SpatFml = [SpatPred]
+type SymbHeap = (PureFml, SpatFml)
