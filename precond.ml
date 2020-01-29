@@ -68,7 +68,7 @@ let rec string_of_comm_rec n = let ind n = String.make (n * 2) ' ' in function
 and string_of_prog_rec n p = String.concat "" (List.map (string_of_comm_rec n) p)
 let string_of_comm = string_of_comm_rec 0
 let string_of_prog = string_of_prog_rec 0
-          
+
 type fundef = Fun of funName * pvar list * prog
 
 (* apply : symbStore -> exp -> term *)
@@ -117,9 +117,11 @@ let modify_heap h e e' = List.map (function
 
 let string_of_result sdhf_list =
   String.concat "\n" (List.map (fun (s, d, h, f) ->
-                          "(" ^ string_of_pureFml (s, d) ^ ", "
+                          "{" ^ string_of_pureFml (s, d) ^ ", "
                           ^ string_of_spatFml h ^ ", "
-                          ^ string_of_spatFml f ^ ")") sdhf_list)
+                          ^ string_of_spatFml f ^ "}") sdhf_list)
+
+let debug_sdhf sdhf = print_endline (string_of_result sdhf)
 
 (* pre : comm -> symbStore * pathExp * spatFml * spatFml -> (symbStore * pathExp * spatFml * spatFml) list *)
 (* preProg : prog -> SH -> SH list *)
@@ -152,6 +154,7 @@ let rec pre c (s, d, h, f) = match c with
 and preProg p (s, d, h, f) = match p with
   | [] -> [(s, d, h, f)]
   | c :: p -> let rs = pre c (s, d, h, f) in
+              print_string (string_of_comm c); debug_sdhf rs;
               List.concat (List.map (fun sdhf -> preProg p sdhf) rs)
 
 (* disp-list (x) { if x == NULL then return else y = *x; disp_list(y); free(x) *)
@@ -168,12 +171,13 @@ let swap_body = [
     Modify (Var "x", Var "s");
     Modify (Var "y", Var "t")
   ]
-                      
+
 let initSymbStore = ["x", Bar "x"; "y", Bar "y"; "t", Hat "t"; "s", Hat "s"]
 
 let main () =
   print_string (string_of_prog swap_body);
+  print_endline "-----";
+  debug_sdhf [initSymbStore, [], [], []];
   let res = preProg swap_body (initSymbStore, [], [], []) in
-  print_int (List.length res); print_newline;
-  print_string (string_of_result res)
+  res
 let _ = main ()
