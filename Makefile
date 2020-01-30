@@ -1,4 +1,4 @@
 main: types.cmx precond.cmx
 	ocamlopt -o $@ $^
-.cmx.ml:
+%.cmx: %.ml
 	ocamlopt -c $@ $^
