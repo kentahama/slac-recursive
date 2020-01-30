@@ -123,6 +123,9 @@ let string_of_result sdhf_list =
 
 let debug_sdhf sdhf = print_endline (string_of_result sdhf)
 
+let add_footprint (s,d,h,f) e xbar =
+  (s, d, Mapsto (e, xbar) :: h, Mapsto (e, xbar) :: f)
+
 (* pre : comm -> symbStore * pathExp * spatFml * spatFml -> (symbStore * pathExp * spatFml * spatFml) list *)
 (* preProg : prog -> SH -> SH list *)
 let rec pre c (s, d, h, f) = match c with
@@ -137,15 +140,22 @@ let rec pre c (s, d, h, f) = match c with
      let e'' = rearrange d h e' in
      let h' = expand_ls d h e' in
      [(x, e'')::s, d, h', f]
-  | Derefer (x, e) -> let xbar = Bar (gensym ()) and
-                          e' = apply s e in
-                      [(x, xbar)::s, List.map (fun e -> NE (e', e)) (dom h) @ d, Mapsto (e', xbar)::h, Mapsto (e', xbar)::f]
-  | Modify (e, e') when allocated d h (apply s e) ->
+  | Derefer (x, e) ->
      let es = apply s e in
-     let e's = apply s e' in
+     let xbar = Bar (gensym ()) in
+     let (s, d, h, f) = add_footprint (s, d, h, f) es xbar in
+     [(x, xbar)::s, List.map (fun e -> NE (es, e)) (dom h) @ d, h, f]
+  | Modify (e, e') when allocated d h (apply s e) ->
+     let es = apply s e and
+         e's = apply s e' in
      let h' = modify_heap h es e's in
      [s, d, h', f]
-  | Modify (e, e') -> failwith "modify"
+  | Modify (e, e') ->
+     let es = apply s e and
+         e's = apply s e' in
+     let e'' = rearrange d h es in
+     let xbar = Bar (gensym ()) in
+     [add_footprint (s, d, h, f) es xbar]
   | Free e when allocated d h (apply s e) -> failwith "free"
   | Free e -> failwith "free"
   | Call (f, es) -> failwith "call"
