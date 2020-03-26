@@ -1,4 +1,5 @@
-open Types
+open SymbolicHeap
+open Program
 
 (* apply : symbStore -> exp -> term *)
 let rec apply s = function
@@ -82,7 +83,6 @@ let rec pre c (s, d, h, f) = match c with
   | Modify (e, e') ->
      let es = apply s e and
          e's = apply s e' in
-     let e'' = rearrange d h es in
      let xbar = Bar (gensym ()) in
      [add_footprint (s, d, h, f) es xbar]
   | Free e when allocated d h (apply s e) -> failwith "free"
@@ -95,28 +95,3 @@ and preProg p (s, d, h, f) = match p with
   | c :: p -> let rs = pre c (s, d, h, f) in
               print_string (string_of_comm c); debug_sdhf rs;
               List.concat (List.map (fun sdhf -> preProg p sdhf) rs)
-
-(* disp-list (x) { if x == NULL then return else y = *x; disp_list(y); free(x) *)
-let dispose_list_body = [
-    Malloc "x";
-    If (Eeq ((Var "x"), NULL),
-      [],
-      [Derefer ("y", Var "x"); Call ("disp_list", [Var "y"]); Free (Var "x")])
-  ]
-(* swap(x, y) = { local t; t = *x; s = *y; *x = s; *y = t; } *)
-let swap_body = [
-    Derefer ("t", Var "x");
-    Derefer ("s", Var "y");
-    Modify (Var "x", Var "s");
-    Modify (Var "y", Var "t")
-  ]
-
-let initSymbStore = ["x", Bar "x"; "y", Bar "y"; "t", Hat "t"; "s", Hat "s"]
-
-let main () =
-  print_string (string_of_prog swap_body);
-  print_endline "-----";
-  debug_sdhf [initSymbStore, [], [], []];
-  let res = preProg swap_body (initSymbStore, [], [], []) in
-  res
-let _ = main ()

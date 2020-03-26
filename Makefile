@@ -1,14 +1,14 @@
-LIBS_NAME=types
+LIBS_NAME=program symbolicHeap entailment biabduction precond
 LIBS=$(patsubst %,%.cmx,$(LIBS_NAME))
 
-main: $(LIBS) precond.cmx
+main: $(LIBS) main.cmx
 	ocamlopt -o $@ $^
 
 %.cmx: %.ml
-	ocamlopt -o $@ -c $<
+	ocamlopt -c $<
 
 %.cmi: %.mli
-	ocamlopt -o $@ -c $<
+	ocamlopt -c $<
 
 -include .depend
 .depend: $(wildcard *.ml) $(wildcard *.mli)
